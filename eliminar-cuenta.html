@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eliminar cuenta · holaGo Pasajeros</title>
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<header><span class="logo">hola<b>Go</b></span></header>
+<main>
+<h1>Eliminar tu cuenta de holaGo</h1>
+<p class="meta">Apps holaGo para pasajeros y para conductores</p>
+
+<h2>Si tienes la aplicación</h2>
+<ul>
+  <li><b>Pasajeros:</b> abre holaGo y entra a <b>Menú &gt; Configuración &gt; Eliminar mi cuenta</b>.</li>
+  <li><b>Conductores:</b> abre holaGo Conductor y entra a <b>Mi Perfil &gt; Eliminar mi cuenta</b>.</li>
+</ul>
+<p>La cuenta se elimina al instante.</p>
+
+<h2>Si ya no tienes la aplicación</h2>
+<p>Completa este formulario. Para comprobar que la cuenta es tuya, usa el mismo número de teléfono y el mismo nombre con los que te registraste. Revisamos cada pedido y eliminamos la cuenta en un plazo máximo de <b>30 días</b>.</p>
+
+<form id="formulario" class="caja">
+  <label for="tipo">Mi cuenta es de</label>
+  <select id="tipo" name="tipo">
+    <option value="pasajero">Pasajero (app holaGo)</option>
+    <option value="conductor">Conductor (app holaGo Conductor)</option>
+  </select>
+
+  <label for="telefono">Número de teléfono de la cuenta</label>
+  <input id="telefono" name="telefono" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" placeholder="Ej: 70000000">
+
+  <label for="nombre">Nombre con el que te registraste</label>
+  <input id="nombre" name="nombre" type="text" autocomplete="name" required maxlength="100">
+
+  <label for="mensaje">Comentario (opcional)</label>
+  <textarea id="mensaje" name="mensaje" maxlength="500"></textarea>
+
+  <button id="enviar" type="submit">Pedir la eliminación de mi cuenta</button>
+  <p id="resultado" role="status"></p>
+</form>
+
+<h2>Qué se borra y qué se conserva</h2>
+<h3>Pasajeros</h3>
+<ul>
+  <li><b>Se borran:</b> tu nombre, tu teléfono, tu foto, tus direcciones favoritas, tus notificaciones, la lista de conductores que bloqueaste y el identificador de tu celular.</li>
+  <li><b>Se conservan sin tu nombre ni tu teléfono:</b> el historial de viajes y las calificaciones, porque también son el historial del conductor y de su asociación, y sirven para atender reclamos.</li>
+</ul>
+<h3>Conductores</h3>
+<ul>
+  <li><b>Se borran:</b> tu nombre, tu teléfono, tu foto, los datos de tu moto, tu ubicación, tus notificaciones, los pasajeros que bloqueaste y el identificador de tu celular. Sales de tu asociación y tu número de interno queda libre.</li>
+  <li><b>Se conservan sin tu nombre ni tu teléfono:</b> tus viajes, carreras libres, calificaciones e historial de prioridad. Los pagos del plan y sus comprobantes se conservan como registro de cobro.</li>
+</ul>
+<h3>Para los dos</h3>
+<ul>
+  <li>Los mensajes del chat se borran a los 2 años del viaje.</li>
+  <li>Si la cuenta estaba suspendida, se guarda el número de teléfono para que la suspensión no pueda esquivarse con una cuenta nueva.</li>
+</ul>
+<p>Más detalles en la Política de Privacidad de <a href="privacidad.html">pasajeros</a> o de <a href="conductor-privacidad.html">conductores</a>.</p>
+</main>
+
+<script>
+  // Clave pública (publishable) de Supabase: es la misma que lleva la app y
+  // solo permite lo que las reglas de la base de datos dejan. Esta página
+  // solo puede llamar a "pedir_eliminacion_web", que guarda el pedido.
+  const URL_SUPABASE = 'https://gnazrclxoqhsnybuxlqg.supabase.co';
+  const CLAVE_PUBLICA = 'sb_publishable_NbA2W_A9DXtj6qFH3oTZZw_B19ntQSO';
+
+  const formulario = document.getElementById('formulario');
+  const boton = document.getElementById('enviar');
+  const resultado = document.getElementById('resultado');
+
+  formulario.addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    boton.disabled = true;
+    resultado.className = '';
+    resultado.textContent = 'Enviando...';
+    try {
+      const respuesta = await fetch(URL_SUPABASE + '/rest/v1/rpc/pedir_eliminacion_web', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': CLAVE_PUBLICA },
+        body: JSON.stringify({
+          p_telefono: formulario.telefono.value,
+          p_nombre: formulario.nombre.value,
+          p_mensaje: formulario.mensaje.value,
+          p_tipo: formulario.tipo.value,
+        }),
+      });
+      const datos = await respuesta.json().catch(() => null);
+      if (!respuesta.ok) {
+        throw new Error((datos && datos.message) || 'No se pudo enviar.');
+      }
+      resultado.className = 'ok';
+      resultado.textContent = 'Recibimos tu pedido. Eliminaremos tu cuenta en un plazo máximo de 30 días.';
+      formulario.reset();
+    } catch (e) {
+      resultado.className = 'error';
+      resultado.textContent = e.message + ' Revisa tu internet e intenta de nuevo.';
+    } finally {
+      boton.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
